@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Debt Visualization</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 40px; }
+    .chart { margin-bottom: 80px; }
+    .title { font-size: 24px; font-weight: bold; margin: 20px 0 10px; }
+    .annotation { font-style: italic; color: gray; }
+  </style>
+</head>
+<body>
+  <h1>Student Debt in America: A Visual Story</h1>
+
+  <div id="scene1" class="chart">
+    <div class="title">Scene 1 – Growth of Student Loan Debt (2000–present)</div>
+    <svg width="800" height="400"></svg>
+    <div class="annotation">Comparing student loan debt to credit card, auto, and mortgage debt. Annotated with recession periods and legislation milestones.</div>
+  </div>
+
+  <div id="scene2" class="chart">
+    <div class="title">Scene 2 – Who Holds the Debt</div>
+    <svg width="800" height="400"></svg>
+    <div class="annotation">Breakdown by age group, race, and gender. Note the burden on borrowers 25–34, with a rise among older groups.</div>
+  </div>
+
+  <div id="scene3" class="chart">
+    <div class="title">Scene 3 – The Burden of Debt</div>
+    <svg width="800" height="400"></svg>
+    <div class="annotation">Debt-to-income ratios, repayment trends, and delinquency rates. Includes a spike in default in 2012.</div>
+  </div>
+
+  <script>
+    // Scene 1: Line chart
+    d3.csv("https://gudbrandsen.github.io/html_test/scene1.csv").then(data => {
+      data.forEach(d => {
+        d.year = +d.year;
+        d.student = +d.student;
+        d.credit = +d.credit;
+        d.auto = +d.auto;
+        d.mortgage = +d.mortgage;
+      });
+
+      const svg = d3.select("#scene1 svg");
+      const margin = { top: 40, right: 100, bottom: 50, left: 60 };
+      const width = +svg.attr("width") - margin.left - margin.right;
+      const height = +svg.attr("height") - margin.top - margin.bottom;
+      const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+      const x = d3.scaleLinear().domain(d3.extent(data, d => d.year)).range([0, width]);
+      const y = d3.scaleLinear().domain([0, d3.max(data, d => Math.max(d.student, d.credit, d.auto, d.mortgage))]).nice().range([height, 0]);
+
+      const line = key => d3.line().x(d => x(d.year)).y(d => y(d[key]));
+
+      const colors = { student: "#1f77b4", credit: "#ff7f0e", auto: "#2ca02c", mortgage: "#d62728" };
+
+      for (const key of Object.keys(colors)) {
+        g.append("path")
+          .datum(data)
+          .attr("fill", "none")
+          .attr("stroke", colors[key])
+          .attr("stroke-width", 2)
+          .attr("d", line(key));
+
+        g.append("text")
+          .attr("x", width)
+          .attr("y", y(data[data.length - 1][key]))
+          .attr("fill", colors[key])
+          .attr("text-anchor", "end")
+          .attr("dy", ".35em")
+          .text(key);
+      }
+
+      g.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x).tickFormat(d3.format("d")));
+      g.append("g").call(d3.axisLeft(y));
+    });
+
+    // Scene 2: Bar chart by age, race, gender
+    d3.csv("https://gudbrandsen.github.io/html_test/scene2.csv").then(data => {
+      const svg = d3.select("#scene2 svg");
+      const margin = { top: 40, right: 20, bottom: 80, left: 60 };
+      const width = +svg.attr("width") - margin.left - margin.right;
+      const height = +svg.attr("height") - margin.top - margin.bottom;
+      const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+      const x = d3.scaleBand().domain(data.map(d => d.group)).range([0, width]).padding(0.2);
+      const y = d3.scaleLinear().domain([0, d3.max(data, d => +d.debt)]).nice().range([height, 0]);
+
+      g.selectAll("rect")
+        .data(data)
+        .enter()
+        .append("rect")
+        .attr("x", d => x(d.group))
+        .attr("y", d => y(+d.debt))
+        .attr("width", x.bandwidth())
+        .attr("height", d => height - y(+d.debt))
+        .attr("fill", "#6baed6");
+
+      g.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x)).selectAll("text").attr("transform", "rotate(-40)").style("text-anchor", "end");
+      g.append("g").call(d3.axisLeft(y));
+    });
+
+    // Scene 3: Debt-to-income and delinquency trends
+    d3.csv("https://gudbrandsen.github.io/html_test/scene3.csv").then(data => {
+      data.forEach(d => {
+        d.year = +d.year;
+        d.dti = +d.dti;
+        d.default = +d.default;
+      });
+
+      const svg = d3.select("#scene3 svg");
+      const margin = { top: 40, right: 100, bottom: 50, left: 60 };
+      const width = +svg.attr("width") - margin.left - margin.right;
+      const height = +svg.attr("height") - margin.top - margin.bottom;
+      const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+      const x = d3.scaleLinear().domain(d3.extent(data, d => d.year)).range([0, width]);
+      const y = d3.scaleLinear().domain([0, d3.max(data, d => Math.max(d.dti, d.default))]).nice().range([height, 0]);
+
+      g.append("path")
+        .datum(data)
+        .attr("fill", "none")
+        .attr("stroke", "#984ea3")
+        .attr("stroke-width", 2)
+        .attr("d", d3.line().x(d => x(d.year)).y(d => y(d.dti)));
+
+      g.append("path")
+        .datum(data)
+        .attr("fill", "none")
+        .attr("stroke", "#e41a1c")
+        .attr("stroke-width", 2)
+        .attr("d", d3.line().x(d => x(d.year)).y(d => y(d.default)));
+
+      g.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x).tickFormat(d3.format("d")));
+      g.append("g").call(d3.axisLeft(y));
+
+      g.append("text").attr("x", width).attr("y", y(data[data.length - 1].dti)).attr("fill", "#984ea3").attr("text-anchor", "end").text("Debt-to-Income Ratio");
+      g.append("text").attr("x", width).attr("y", y(data[data.length - 1].default)).attr("fill", "#e41a1c").attr("text-anchor", "end").text("Default Rate");
+    });
+  </script>
+</body>
+</html>
