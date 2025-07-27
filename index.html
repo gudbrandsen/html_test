@@ -2,60 +2,80 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Student Debt Visualization</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student Debt Visualization with Scene Buttons</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body { font-family: sans-serif; margin: 40px; }
-    .chart { margin-bottom: 80px; }
-    .title { font-size: 24px; font-weight: bold; margin: 20px 0 10px; }
-    .annotation { font-style: italic; color: gray; }
+    .chart { margin-top: 20px; }
+    .title { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+    .annotation { font-style: italic; color: gray; margin-top: 5px; }
+    button { margin-right: 10px; padding: 8px 12px; font-size: 16px; cursor: pointer; }
+    button.active { background-color: #1f77b4; color: white; border: none; }
   </style>
 </head>
 <body>
+
   <h1>Student Debt in America: A Visual Story</h1>
 
-  <div id="scene1" class="chart">
-    <div class="title">Scene 1 – Growth of Student Loan Debt (2000–present)</div>
-    <svg width="800" height="400"></svg>
-    <div class="annotation">Comparing student loan debt to credit card, auto, and mortgage debt. Annotated with recession periods and legislation milestones.</div>
+  <div id="buttons">
+    <button id="btn1" class="active">Scene 1: Debt Growth</button>
+    <button id="btn2">Scene 2: Who Holds Debt</button>
+    <button id="btn3">Scene 3: Burden of Debt</button>
   </div>
 
-  <div id="scene2" class="chart">
-    <div class="title">Scene 2 – Who Holds the Debt</div>
+  <div id="scene" class="chart">
+    <div class="title" id="scene-title">Scene 1 – Growth of Student Loan Debt (2000–present)</div>
     <svg width="800" height="400"></svg>
-    <div class="annotation">Breakdown by age group, race, and gender. Note the burden on borrowers 25–34, with a rise among older groups.</div>
+    <div class="annotation" id="scene-annotation">
+      Comparing student loan debt to credit card, auto, and mortgage debt. Annotated with recession periods and legislation milestones.
+    </div>
   </div>
 
-  <div id="scene3" class="chart">
-    <div class="title">Scene 3 – The Burden of Debt</div>
-    <svg width="800" height="400"></svg>
-    <div class="annotation">Debt-to-income ratios, repayment trends, and delinquency rates. Includes a spike in default in 2012.</div>
-  </div>
+<script>
+  const svg = d3.select("#scene svg");
+  const width = +svg.attr("width");
+  const height = +svg.attr("height");
+  const margin = { top: 40, right: 100, bottom: 50, left: 60 };
+  const chartWidth = width - margin.left - margin.right;
+  const chartHeight = height - margin.top - margin.bottom;
 
-  <script>
-    // Scene 1: Line chart
+  const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+  // Clear chart group contents
+  function clearChart() {
+    g.selectAll("*").remove();
+  }
+
+  // Update button styles
+  function setActiveButton(id) {
+    d3.selectAll("#buttons button").classed("active", false);
+    d3.select(`#${id}`).classed("active", true);
+  }
+
+  // Scene 1 Drawing
+  function drawScene1() {
+    clearChart();
     d3.csv("https://gudbrandsen.github.io/html_test/scene1.csv").then(data => {
       data.forEach(d => {
-        d.year = +d.year;
-        d.student = +d.student;
-        d.credit = +d.credit;
-        d.auto = +d.auto;
-        d.mortgage = +d.mortgage;
+        d.Year = +d.Year;
+        d.Student_Loan = +d.Student_Loan;
+        d.Mortgage = +d.Mortgage;
+        d.Auto = +d.Auto;
+        d.Credit_Card = +d.Credit_Card;
       });
 
-      const svg = d3.select("#scene1 svg");
-      const margin = { top: 40, right: 100, bottom: 50, left: 60 };
-      const width = +svg.attr("width") - margin.left - margin.right;
-      const height = +svg.attr("height") - margin.top - margin.bottom;
-      const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+      const x = d3.scaleLinear().domain(d3.extent(data, d => d.Year)).range([0, chartWidth]);
+      const y = d3.scaleLinear().domain([0, d3.max(data, d => Math.max(d.Student_Loan, d.Mortgage, d.Auto, d.Credit_Card))]).nice().range([chartHeight, 0]);
 
-      const x = d3.scaleLinear().domain(d3.extent(data, d => d.year)).range([0, width]);
-      const y = d3.scaleLinear().domain([0, d3.max(data, d => Math.max(d.student, d.credit, d.auto, d.mortgage))]).nice().range([height, 0]);
+      const line = key => d3.line().x(d => x(d.Year)).y(d => y(d[key]));
 
-      const line = key => d3.line().x(d => x(d.year)).y(d => y(d[key]));
-
-      const colors = { student: "#1f77b4", credit: "#ff7f0e", auto: "#2ca02c", mortgage: "#d62728" };
+      const colors = {
+        Student_Loan: "#1f77b4",
+        Credit_Card: "#ff7f0e",
+        Auto: "#2ca02c",
+        Mortgage: "#d62728"
+      };
 
       for (const key of Object.keys(colors)) {
         g.append("path")
@@ -64,82 +84,107 @@
           .attr("stroke", colors[key])
           .attr("stroke-width", 2)
           .attr("d", line(key));
-
         g.append("text")
-          .attr("x", width)
+          .attr("x", chartWidth)
           .attr("y", y(data[data.length - 1][key]))
           .attr("fill", colors[key])
           .attr("text-anchor", "end")
           .attr("dy", ".35em")
-          .text(key);
+          .text(key.replace(/_/g, " "));
       }
 
-      g.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x).tickFormat(d3.format("d")));
+      // Axes
+      g.append("g").attr("transform", `translate(0,${chartHeight})`).call(d3.axisBottom(x).tickFormat(d3.format("d")));
       g.append("g").call(d3.axisLeft(y));
     });
 
-    // Scene 2: Bar chart by age, race, gender
-    d3.csv("https://gudbrandsen.github.io/html_test/scene2.csv").then(data => {
-      const svg = d3.select("#scene2 svg");
-      const margin = { top: 40, right: 20, bottom: 80, left: 60 };
-      const width = +svg.attr("width") - margin.left - margin.right;
-      const height = +svg.attr("height") - margin.top - margin.bottom;
-      const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+    d3.select("#scene-title").text("Scene 1 – Growth of Student Loan Debt (2000–present)");
+    d3.select("#scene-annotation").text("Comparing student loan debt to credit card, auto, and mortgage debt. Annotated with recession periods and legislation milestones.");
+  }
 
-      const x = d3.scaleBand().domain(data.map(d => d.group)).range([0, width]).padding(0.2);
-      const y = d3.scaleLinear().domain([0, d3.max(data, d => +d.debt)]).nice().range([height, 0]);
+  // Scene 2 Drawing
+  function drawScene2() {
+    clearChart();
+    d3.csv("https://gudbrandsen.github.io/html_test/scene2.csv").then(data => {
+      const x = d3.scaleBand().domain(data.map(d => d.Group)).range([0, chartWidth]).padding(0.2);
+      const y = d3.scaleLinear().domain([0, d3.max(data, d => +d.Student_Loan_Balance_Avg)]).nice().range([chartHeight, 0]);
 
       g.selectAll("rect")
         .data(data)
         .enter()
         .append("rect")
-        .attr("x", d => x(d.group))
-        .attr("y", d => y(+d.debt))
+        .attr("x", d => x(d.Group))
+        .attr("y", d => y(+d.Student_Loan_Balance_Avg))
         .attr("width", x.bandwidth())
-        .attr("height", d => height - y(+d.debt))
+        .attr("height", d => chartHeight - y(+d.Student_Loan_Balance_Avg))
         .attr("fill", "#6baed6");
 
-      g.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x)).selectAll("text").attr("transform", "rotate(-40)").style("text-anchor", "end");
+      g.append("g").attr("transform", `translate(0,${chartHeight})`).call(d3.axisBottom(x)).selectAll("text").attr("transform", "rotate(-40)").style("text-anchor", "end");
       g.append("g").call(d3.axisLeft(y));
-    });
 
-    // Scene 3: Debt-to-income and delinquency trends
+    d3.select("#scene-title").text("Scene 2 – Who Holds the Debt");
+    d3.select("#scene-annotation").text("Breakdown by age group, race, and gender. Note the burden on borrowers 25–34, with a rise among older groups.");
+    });
+  }
+
+  // Scene 3 Drawing
+  function drawScene3() {
+    clearChart();
     d3.csv("https://gudbrandsen.github.io/html_test/scene3.csv").then(data => {
       data.forEach(d => {
-        d.year = +d.year;
-        d.dti = +d.dti;
-        d.default = +d.default;
+        d.Year = +d.Year;
+        d.Default_Rate = +d.Default_Rate;
+        d.Income_Driven_Repayment_Users_Pct = +d.Income_Driven_Repayment_Users_Pct;
+        d.Avg_DTI = +d.Avg_DTI;
       });
 
-      const svg = d3.select("#scene3 svg");
-      const margin = { top: 40, right: 100, bottom: 50, left: 60 };
-      const width = +svg.attr("width") - margin.left - margin.right;
-      const height = +svg.attr("height") - margin.top - margin.bottom;
-      const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-
-      const x = d3.scaleLinear().domain(d3.extent(data, d => d.year)).range([0, width]);
-      const y = d3.scaleLinear().domain([0, d3.max(data, d => Math.max(d.dti, d.default))]).nice().range([height, 0]);
+      const x = d3.scaleLinear().domain(d3.extent(data, d => d.Year)).range([0, chartWidth]);
+      const y = d3.scaleLinear().domain([0, d3.max(data, d => Math.max(d.Default_Rate, d.Avg_DTI * 100))]).nice().range([chartHeight, 0]);
 
       g.append("path")
         .datum(data)
         .attr("fill", "none")
         .attr("stroke", "#984ea3")
         .attr("stroke-width", 2)
-        .attr("d", d3.line().x(d => x(d.year)).y(d => y(d.dti)));
+        .attr("d", d3.line().x(d => x(d.Year)).y(d => y(d.Avg_DTI * 100)));
 
       g.append("path")
         .datum(data)
         .attr("fill", "none")
         .attr("stroke", "#e41a1c")
         .attr("stroke-width", 2)
-        .attr("d", d3.line().x(d => x(d.year)).y(d => y(d.default)));
+        .attr("d", d3.line().x(d => x(d.Year)).y(d => y(d.Default_Rate)));
 
-      g.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x).tickFormat(d3.format("d")));
+      g.append("g").attr("transform", `translate(0,${chartHeight})`).call(d3.axisBottom(x).tickFormat(d3.format("d")));
       g.append("g").call(d3.axisLeft(y));
 
-      g.append("text").attr("x", width).attr("y", y(data[data.length - 1].dti)).attr("fill", "#984ea3").attr("text-anchor", "end").text("Debt-to-Income Ratio");
-      g.append("text").attr("x", width).attr("y", y(data[data.length - 1].default)).attr("fill", "#e41a1c").attr("text-anchor", "end").text("Default Rate");
+      g.append("text").attr("x", chartWidth).attr("y", y(data[data.length - 1].Avg_DTI * 100)).attr("fill", "#984ea3").attr("text-anchor", "end").text("Avg Debt-to-Income (%)");
+      g.append("text").attr("x", chartWidth).attr("y", y(data[data.length - 1].Default_Rate)).attr("fill", "#e41a1c").attr("text-anchor", "end").text("Default Rate (%)");
     });
-  </script>
+
+    d3.select("#scene-title").text("Scene 3 – The Burden of Debt");
+    d3.select("#scene-annotation").text("Debt-to-income ratios, repayment trends, and delinquency rates. Includes a spike in default in 2012.");
+  }
+
+  // Button click handlers
+  d3.select("#btn1").on("click", () => {
+    setActiveButton("btn1");
+    drawScene1();
+  });
+
+  d3.select("#btn2").on("click", () => {
+    setActiveButton("btn2");
+    drawScene2();
+  });
+
+  d3.select("#btn3").on("click", () => {
+    setActiveButton("btn3");
+    drawScene3();
+  });
+
+  // Initial draw
+  drawScene1();
+
+</script>
 </body>
 </html>
