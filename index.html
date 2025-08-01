@@ -25,7 +25,7 @@
   </div>
 
   <div id="scene" class="chart">
-    <div class="title" id="scene-title">Scene 1 – Growth of Student Loan Debt (2000–present)</div>
+    <div class="title" id="scene-title">Scene 1 - Growth of Student Loan Debt (2000-present)</div>
     <svg width="800" height="400"></svg>
     <div class="annotation" id="scene-annotation">
       Comparing student loan debt to credit card, auto, and mortgage debt. Annotated with recession periods and legislation milestones.
@@ -61,19 +61,19 @@
         d.Year = +d.Year;
         d.Student_Loan = +d.Student_Loan;
         d.Mortgage = +d.Mortgage;
-        d.Auto = +d.Auto;
+        d.Auto_Loan = +d.Auto_Loan;
         d.Credit_Card = +d.Credit_Card;
       });
 
       const x = d3.scaleLinear().domain(d3.extent(data, d => d.Year)).range([0, chartWidth]);
-      const y = d3.scaleLinear().domain([0, d3.max(data, d => Math.max(d.Student_Loan, d.Mortgage, d.Auto, d.Credit_Card))]).nice().range([chartHeight, 0]);
+      const y = d3.scaleLinear().domain([0, d3.max(data, d => Math.max(d.Student_Loan, d.Mortgage, d.Auto_Loan, d.Credit_Card))]).nice().range([chartHeight, 0]);
 
       const line = key => d3.line().x(d => x(d.Year)).y(d => y(d[key]));
 
       const colors = {
         Student_Loan: "#1f77b4",
         Credit_Card: "#ff7f0e",
-        Auto: "#2ca02c",
+        Auto_Loan: "#2ca02c",
         Mortgage: "#d62728"
       };
 
@@ -98,7 +98,7 @@
       g.append("g").call(d3.axisLeft(y));
     });
 
-    d3.select("#scene-title").text("Scene 1 – Growth of Student Loan Debt (2000–present)");
+    d3.select("#scene-title").text("Scene 1 - Growth of Student Loan Debt (2000–present)");
     d3.select("#scene-annotation").text("Comparing student loan debt to credit card, auto, and mortgage debt. Annotated with recession periods and legislation milestones.");
   }
 
@@ -122,8 +122,8 @@
       g.append("g").attr("transform", `translate(0,${chartHeight})`).call(d3.axisBottom(x)).selectAll("text").attr("transform", "rotate(-40)").style("text-anchor", "end");
       g.append("g").call(d3.axisLeft(y));
 
-    d3.select("#scene-title").text("Scene 2 – Who Holds the Debt");
-    d3.select("#scene-annotation").text("Breakdown by age group, race, and gender. Note the burden on borrowers 25–34, with a rise among older groups.");
+    d3.select("#scene-title").text("Scene 2 - Who Holds the Debt");
+    d3.select("#scene-annotation").text("Breakdown by age group, race, and gender. Note the burden on borrowers 25-34, with a rise among older groups.");
     });
   }
 
@@ -162,7 +162,7 @@
       g.append("text").attr("x", chartWidth).attr("y", y(data[data.length - 1].Default_Rate)).attr("fill", "#e41a1c").attr("text-anchor", "end").text("Default Rate (%)");
     });
 
-    d3.select("#scene-title").text("Scene 3 – The Burden of Debt");
+    d3.select("#scene-title").text("Scene 3 - The Burden of Debt");
     d3.select("#scene-annotation").text("Debt-to-income ratios, repayment trends, and delinquency rates. Includes a spike in default in 2012.");
   }
 
