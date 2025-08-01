@@ -1,7 +1,7 @@
-﻿Group,Age,Race,Gender,DebtAmount
-Age 18–24,18-24,All,All,400
-Age 25–34,25-34,All,All,1100
-Age 35–49,35-49,All,All,900
+﻿Group,Age,Race,Gender,Student_Loan_Balance_Avg
+Age 18-24,18-24,All,All,400
+Age 25-34,25-34,All,All,1100
+Age 35-49,35-49,All,All,900
 Age 50+,50+,All,All,500
 Black,All,Black,All,800
 White,All,White,All,600
